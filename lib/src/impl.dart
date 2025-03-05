@@ -5,21 +5,80 @@ import 'package:jni/jni.dart' as jni;
 import 'events.dart';
 import 'jni.dart' as jni;
 import 'media_action.dart';
+import 'storage.g.dart' as api;
 import 'storage_manager.dart';
 import 'storage_plugin.dart';
+import 'storage_volume.dart';
+
+api.Context get _context => api.StoragePlugin.instance.applicationContext;
 
 final class StoragePluginImpl extends StoragePlugin {
   @override
-  StorageManager get storageManager => StorageManagerImpl();
+  StorageManager newStorageManager() => _StorageManagerImpl();
 }
 
-final class StorageManagerImpl implements StorageManager {
-  static StorageManagerImpl? _instance;
+final class _StorageManagerImpl extends StorageManager {
+  static _StorageManagerImpl? _instance;
+
+  factory _StorageManagerImpl() {
+    var instance = _instance;
+    if (instance == null) {
+      _instance = instance = _StorageManagerImpl._impl();
+    }
+    return instance;
+  }
+
+  final Future<api.StorageManager?> _manager;
+
+  _StorageManagerImpl._impl()
+      : _manager = api.ContextCompat.getStorageManager(_context),
+        super.impl();
+
+  @override
+  // TODO: implement mediaChanged
+  Stream<MediaChangedEvent> get mediaChanged => throw UnimplementedError();
+
+  @override
+  Future<List<StorageVolume>> getStorageVolumes() async {
+    final manager = await _manager;
+    if (manager == null) {
+      throw ArgumentError.notNull();
+    }
+    final volumes = await manager.getStorageVolumes();
+    return volumes.map((volume) => _StorageVolumeImpl.impl(volume)).toList();
+  }
+}
+
+final class _StorageVolumeImpl extends StorageVolume {
+  final api.StorageVolume _volume;
+
+  _StorageVolumeImpl.impl(this._volume) : super.impl();
+
+  @override
+  Future<String?> getPath() async {
+    final path = await _volume.getPath();
+    if (path == null) {
+      return null;
+    }
+    return path;
+  }
+}
+
+final class _JNIStorageManagerImpl extends StorageManager {
+  static _JNIStorageManagerImpl? _instance;
+
+  factory _JNIStorageManagerImpl() {
+    var instance = _instance;
+    if (instance == null) {
+      _instance = instance = _JNIStorageManagerImpl._impl();
+    }
+    return instance;
+  }
 
   late final jni.BroadcastReceiverImpl _receiver;
   late final StreamController<MediaChangedEvent> _mediaChangedController;
 
-  StorageManagerImpl._() {
+  _JNIStorageManagerImpl._impl() : super.impl() {
     final callback = jni.BroadcastReceiverImpl_Callback.implement(
       jni.$BroadcastReceiverImpl_Callback(
         onReceive: (context, intent) {
@@ -43,14 +102,6 @@ final class StorageManagerImpl implements StorageManager {
       onListen: _onListenMediaChanged,
       onCancel: _onCancelMediaChanged,
     );
-  }
-
-  factory StorageManagerImpl() {
-    var instance = _instance;
-    if (instance == null) {
-      _instance = instance = StorageManagerImpl._();
-    }
-    return instance;
   }
 
   @override
@@ -82,6 +133,12 @@ final class StorageManagerImpl implements StorageManager {
 
   void _onCancelMediaChanged() {
     jni.context.unregisterReceiver(_receiver);
+  }
+
+  @override
+  Future<List<StorageVolume>> getStorageVolumes() {
+    // TODO: implement getStorageVolumes
+    throw UnimplementedError();
   }
 }
 

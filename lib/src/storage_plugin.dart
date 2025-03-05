@@ -30,5 +30,5 @@ abstract class StoragePlugin extends PlatformInterface {
     _instance = instance;
   }
 
-  StorageManager get storageManager;
+  StorageManager newStorageManager();
 }
