@@ -1,38 +1,39 @@
 package dev.hebei.storage
 
-import android.os.Build
+import android.content.Context
 import android.os.storage.StorageManager
 import java.util.concurrent.Executor
 
-class StorageManagerApi(registrar: StoragePigeonProxyApiRegistrar) : PigeonApiStorageManager(registrar) {
+class StorageManagerApi(registrar: StoragePigeonProxyApiRegistrar, private val context: Context) :
+    PigeonApiStorageManager(registrar) {
+    private val clazz = StorageManager::class.java
+
     override fun getStorageVolumes(pigeon_instance: StorageManager): List<StorageVolume> {
-        return pigeon_instance.storageVolumes.map { StorageVolume(it) }
+        val volumes = clazz.getMethod("getVolumes").invoke(pigeon_instance) as List<*>
+        return volumes.mapNotNull { obj ->
+            if (obj == null) null
+            else {
+                val volume = StorageVolume(obj, context)
+                if (volume.isAvailable) volume
+                else null
+            }
+        }
     }
 
     override fun registerStorageVolumeCallback(
         pigeon_instance: StorageManager, executor: Executor, callback: StorageVolumeCallback
     ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val impl = callback as StorageVolumeCallbackApi.Impl30
-            pigeon_instance.registerStorageVolumeCallback(executor, impl.callback)
-        } else {
-            val impl = callback as StorageVolumeCallbackApi.Impl
-            impl.executor = executor
-            val clazz = StorageManager::class.java
-            val method = clazz.getMethod("registerListener", impl.clazz)
-            method.invoke(pigeon_instance, impl.listener)
-        }
+        val impl = callback as StorageVolumeCallback.Impl
+        impl.executor = executor
+        val clazz = StorageManager::class.java
+        val method = clazz.getMethod("registerListener", StorageVolumeCallback.clazz)
+        method.invoke(pigeon_instance, impl.listener)
     }
 
     override fun unregisterStorageVolumeCallback(pigeon_instance: StorageManager, callback: StorageVolumeCallback) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val impl = callback as StorageVolumeCallbackApi.Impl30
-            pigeon_instance.unregisterStorageVolumeCallback(impl.callback)
-        } else {
-            val impl = callback as StorageVolumeCallbackApi.Impl
-            val clazz = StorageManager::class.java
-            val method = clazz.getMethod("unregisterListener", impl.clazz)
-            method.invoke(pigeon_instance, impl.listener)
-        }
+        val impl = callback as StorageVolumeCallback.Impl
+        val clazz = StorageManager::class.java
+        val method = clazz.getMethod("unregisterListener", StorageVolumeCallback.clazz)
+        method.invoke(pigeon_instance, impl.listener)
     }
 }

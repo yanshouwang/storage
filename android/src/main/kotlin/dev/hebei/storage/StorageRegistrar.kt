@@ -2,10 +2,10 @@ package dev.hebei.storage
 
 import io.flutter.plugin.common.BinaryMessenger
 
-class StorageRegistrar(binaryMessenger: BinaryMessenger, private val storagePlugin: StoragePlugin) :
+class StorageRegistrar(binaryMessenger: BinaryMessenger, private val instance: StoragePlugin) :
     StoragePigeonProxyApiRegistrar(binaryMessenger) {
     override fun getPigeonApiStoragePlugin(): PigeonApiStoragePlugin {
-        return StoragePluginApi(this, storagePlugin)
+        return StoragePluginApi(this, instance)
     }
 
     override fun getPigeonApiContextCompat(): PigeonApiContextCompat {
@@ -13,7 +13,7 @@ class StorageRegistrar(binaryMessenger: BinaryMessenger, private val storagePlug
     }
 
     override fun getPigeonApiStorageManager(): PigeonApiStorageManager {
-        return StorageManagerApi(this)
+        return StorageManagerApi(this, instance.context)
     }
 
     override fun getPigeonApiStorageVolume(): PigeonApiStorageVolume {
@@ -21,6 +21,6 @@ class StorageRegistrar(binaryMessenger: BinaryMessenger, private val storagePlug
     }
 
     override fun getPigeonApiStorageVolumeCallback(): PigeonApiStorageVolumeCallback {
-        return StorageVolumeCallbackApi(this, storagePlugin.applicationContext)
+        return StorageVolumeCallbackApi(this, instance.context)
     }
 }

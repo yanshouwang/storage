@@ -79,15 +79,13 @@ class _HomeViewState extends State<HomeView> {
     final volumes = await _storageManager.getStorageVolumes();
     final newValue = <VolumeModel>[];
     for (var volume in volumes) {
-      final path = await volume.getPath();
-      if (path == null) {
-        continue;
-      }
+      final path = await volume.getPath().then((e) => e ?? '');
       final state = await volume.getState();
       final isEmulated = await volume.isEmulated();
       final isPrimary = await volume.isPrimary();
       final isRemovable = await volume.isRemovable();
       final volumeModel = VolumeModel(
+        volume: volume,
         path: path,
         state: state,
         isEmulated: isEmulated,
@@ -101,20 +99,19 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _onVolumeStateChanged(StorageVolume volume) async {
-    final path = await volume.getPath();
-    if (path == null) {
-      return;
-    }
+    final path = await volume.getPath().then((e) => e ?? '');
     final state = await volume.getState();
     final isEmulated = await volume.isEmulated();
     final isPrimary = await volume.isPrimary();
     final isRemovable = await volume.isRemovable();
+    debugPrint('onVolumeStateChanged: ${volume.hashCode}, $path, $state');
     final value = _volumeModels.value;
     final newValue = <VolumeModel>[];
-    final index = value.indexWhere((e) => e.path == path);
+    final index = value.indexWhere((e) => e.volume == volume);
     if (index < 0) {
       newValue.addAll(value);
       final volumeModel = VolumeModel(
+        volume: volume,
         path: path,
         state: state,
         isEmulated: isEmulated,
@@ -126,6 +123,7 @@ class _HomeViewState extends State<HomeView> {
       for (var i = 0; i < value.length; i++) {
         final volumeModel = i == index
             ? value[i].copyWith(
+                path: path,
                 state: state,
               )
             : value[i];

@@ -5,19 +5,20 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 
 /** StoragePlugin */
 class StoragePlugin : FlutterPlugin {
-    private lateinit var _applicationContext: Context
-    private lateinit var _registrar: StoragePigeonProxyApiRegistrar
+    private lateinit var applicationContext: Context
+    private lateinit var registrar: StoragePigeonProxyApiRegistrar
 
-    val applicationContext: Context get() = _applicationContext
+    val context: Context get() = applicationContext
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        _applicationContext = binding.applicationContext
-        _registrar = StorageRegistrar(binding.binaryMessenger, this)
-        _registrar.setUp()
+        applicationContext = binding.applicationContext
+        registrar = StorageRegistrar(binding.binaryMessenger, this)
+        registrar.setUp()
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        _registrar.tearDown()
-        _registrar.instanceManager.stopFinalizationListener()
+        registrar.tearDown()
+        registrar.instanceManager.stopFinalizationListener()
     }
 }
+

@@ -1,13 +1,16 @@
 import 'package:storage/storage.dart';
 
 class VolumeModel {
+  final StorageVolume volume;
+
   final String path;
-  final MediaState state;
+  final VolumeState state;
   final bool isEmulated;
   final bool isPrimary;
   final bool isRemovable;
 
   VolumeModel({
+    required this.volume,
     required this.path,
     required this.state,
     required this.isEmulated,
@@ -16,10 +19,12 @@ class VolumeModel {
   });
 
   VolumeModel copyWith({
-    MediaState? state,
+    String? path,
+    VolumeState? state,
   }) {
     return VolumeModel(
-      path: path,
+      volume: volume,
+      path: path ?? this.path,
       state: state ?? this.state,
       isEmulated: isEmulated,
       isPrimary: isPrimary,

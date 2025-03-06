@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'media_state.dart';
+import 'volume_state.dart';
 import 'storage.g.dart' as api;
 import 'storage_manager.dart';
 import 'storage_plugin.dart';
@@ -45,15 +45,25 @@ final class _StorageManagerImpl extends StorageManager {
   Future<List<StorageVolume>> getStorageVolumes() async {
     final manager = await _manager;
     final volumes = await manager.getStorageVolumes();
-    return volumes.map((volume) => volume.obj).toList();
+    final volumeObjs = <StorageVolume>[];
+    for (var volume in volumes) {
+      final id = await volume.getId();
+      final volumeObj = _StorageVolumeImpl.impl(id, volume);
+      volumeObjs.add(volumeObj);
+    }
+    return volumeObjs;
   }
 
   void _onListenStateChanged() async {
     final manager = await _manager;
     final executor = await api.ContextCompat.getMainExecutor(_context);
-    final callback = api.StorageVolumeCallback(onStateChanged: (_, volume) {
-      _stateChangedController.add(volume.obj);
-    });
+    final callback = api.StorageVolumeCallback(
+      onStateChanged: (_, volume) async {
+        final id = await volume.getId();
+        final volumeObj = _StorageVolumeImpl.impl(id, volume);
+        _stateChangedController.add(volumeObj);
+      },
+    );
     await manager.registerStorageVolumeCallback(executor, callback);
     _storageVolumeCallback = callback;
   }
@@ -69,9 +79,10 @@ final class _StorageManagerImpl extends StorageManager {
 }
 
 final class _StorageVolumeImpl extends StorageVolume {
+  final String _id;
   final api.StorageVolume _volume;
 
-  _StorageVolumeImpl.impl(this._volume) : super.impl();
+  _StorageVolumeImpl.impl(this._id, this._volume) : super.impl();
 
   @override
   Future<String?> getPath() async {
@@ -83,9 +94,9 @@ final class _StorageVolumeImpl extends StorageVolume {
   }
 
   @override
-  Future<MediaState> getState() async {
+  Future<VolumeState> getState() async {
     final state = await _volume.getState();
-    return state.obj;
+    return state;
   }
 
   @override
@@ -105,37 +116,12 @@ final class _StorageVolumeImpl extends StorageVolume {
     final isRemovable = await _volume.isRemovable();
     return isRemovable;
   }
-}
 
-extension on api.StorageVolume {
-  StorageVolume get obj => _StorageVolumeImpl.impl(this);
-}
+  @override
+  int get hashCode => _id.hashCode;
 
-extension on api.MediaState {
-  MediaState get obj {
-    switch (this) {
-      case api.MediaState.unknown:
-        return MediaState.unknown;
-      case api.MediaState.removed:
-        return MediaState.removed;
-      case api.MediaState.unmounted:
-        return MediaState.unmounted;
-      case api.MediaState.checking:
-        return MediaState.checking;
-      case api.MediaState.nofs:
-        return MediaState.nofs;
-      case api.MediaState.mounted:
-        return MediaState.mounted;
-      case api.MediaState.mountedReadOnly:
-        return MediaState.mountedReadOnly;
-      case api.MediaState.shared:
-        return MediaState.shared;
-      case api.MediaState.badRemoval:
-        return MediaState.badRemoval;
-      case api.MediaState.unmountable:
-        return MediaState.unmountable;
-      case api.MediaState.ejecting:
-        return MediaState.ejecting;
-    }
+  @override
+  bool operator ==(Object other) {
+    return other is _StorageVolumeImpl && other._id == _id;
   }
 }

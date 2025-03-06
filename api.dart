@@ -24,6 +24,94 @@ abstract class StoragePlugin {
   late final Context applicationContext;
 }
 
+/// Information about a shared/external storage volume for a specific user.
+///
+/// A device always has one (and one only) primary storage volume, but it could
+/// have extra volumes, like SD cards and USB drives. This object represents the
+/// logical view of a storage volume for a specific user: different users might
+/// have different views for the same physical volume (for example, if the volume
+/// is a built-in emulated storage).
+///
+/// The storage volume is not necessarily mounted, applications should use getState()
+/// to verify its state.
+///
+/// Applications willing to read or write to this storage volume needs to get a
+/// permission from the user first, which can be achieved in the following ways:
+///
+/// * To get access to standard directories (like the Environment.DIRECTORY_PICTURES),
+/// they can use the createAccessIntent(java.lang.String). This is the recommend
+/// way, since it provides a simpler API and narrows the access to the given
+/// directory (and its descendants).
+/// * To get access to any directory (and its descendants), they can use the
+/// Storage Access Framework APIs (such as Intent.ACTION_OPEN_DOCUMENT and
+/// Intent.ACTION_OPEN_DOCUMENT_TREE, although these APIs do not guarantee the
+/// user will select this specific volume.
+/// * To get read and write access to the primary storage volume, applications
+/// can declare the android.Manifest.permission#READ_EXTERNAL_STORAGE and
+/// android.Manifest.permission#WRITE_EXTERNAL_STORAGE permissions respectively,
+/// with the latter including the former. This approach is discouraged, since
+/// users may be hesitant to grant broad access to all files contained on a storage
+/// device.
+///
+/// It can be obtained through StorageManager.getStorageVolumes() and
+/// StorageManager.getPrimaryStorageVolume() and also as an extra in some broadcasts
+/// (see EXTRA_STORAGE_VOLUME).
+///
+/// See Environment.getExternalStorageDirectory() for more info about shared/external
+/// storage semantics.
+@ProxyApi(
+  kotlinOptions: KotlinProxyApiOptions(
+    fullClassName: 'dev.hebei.storage.StorageVolume',
+  ),
+)
+abstract class StorageVolume {
+  String getId();
+
+  /// Returns the directory where this volume is currently mounted.
+  ///
+  /// Direct filesystem access via this path has significant emulation overhead,
+  /// and apps are instead strongly encouraged to interact with media on storage
+  /// volumes via the MediaStore APIs.
+  ///
+  /// This directory does not give apps any additional access beyond what they
+  /// already have via MediaStore.
+  String? getPath();
+
+  /// Returns the current state of the volume.
+  VolumeState getState();
+
+  /// Returns true if the volume is emulated.
+  bool isEmulated();
+
+  /// Returns true if the volume is the primary shared/external storage, which is
+  /// the volume backed by Environment.getExternalStorageDirectory().
+  bool isPrimary();
+
+  /// Returns true if the volume is removable.
+  bool isRemovable();
+}
+
+/// Callback that delivers StorageVolume related events.
+///
+/// For example, this can be used to detect when a volume changes to the
+/// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
+@ProxyApi(
+  kotlinOptions: KotlinProxyApiOptions(
+    fullClassName: 'dev.hebei.storage.StorageVolumeCallback',
+  ),
+)
+abstract class StorageVolumeCallback {
+  StorageVolumeCallback();
+
+  /// Called when StorageVolume.getState() changes, such as changing to the
+  /// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
+  ///
+  /// The given argument is a snapshot in time and can be used to process events
+  /// in the order they occurred, or you can call StorageManager.getStorageVolumes()
+  /// to observe the latest value.
+  late final void Function(StorageVolume volume) onStateChanged;
+}
+
 /// Interface to global information about an application environment. This is an
 /// abstract class whose implementation is provided by the Android system. It
 /// allows access to application-specific resources and classes, as well as up-calls
@@ -177,129 +265,15 @@ abstract class StorageManager {
   void unregisterStorageVolumeCallback(StorageVolumeCallback callback);
 }
 
-/// Information about a shared/external storage volume for a specific user.
-///
-/// A device always has one (and one only) primary storage volume, but it could
-/// have extra volumes, like SD cards and USB drives. This object represents the
-/// logical view of a storage volume for a specific user: different users might
-/// have different views for the same physical volume (for example, if the volume
-/// is a built-in emulated storage).
-///
-/// The storage volume is not necessarily mounted, applications should use getState()
-/// to verify its state.
-///
-/// Applications willing to read or write to this storage volume needs to get a
-/// permission from the user first, which can be achieved in the following ways:
-///
-/// * To get access to standard directories (like the Environment.DIRECTORY_PICTURES),
-/// they can use the createAccessIntent(java.lang.String). This is the recommend
-/// way, since it provides a simpler API and narrows the access to the given
-/// directory (and its descendants).
-/// * To get access to any directory (and its descendants), they can use the
-/// Storage Access Framework APIs (such as Intent.ACTION_OPEN_DOCUMENT and
-/// Intent.ACTION_OPEN_DOCUMENT_TREE, although these APIs do not guarantee the
-/// user will select this specific volume.
-/// * To get read and write access to the primary storage volume, applications
-/// can declare the android.Manifest.permission#READ_EXTERNAL_STORAGE and
-/// android.Manifest.permission#WRITE_EXTERNAL_STORAGE permissions respectively,
-/// with the latter including the former. This approach is discouraged, since
-/// users may be hesitant to grant broad access to all files contained on a storage
-/// device.
-///
-/// It can be obtained through StorageManager.getStorageVolumes() and
-/// StorageManager.getPrimaryStorageVolume() and also as an extra in some broadcasts
-/// (see EXTRA_STORAGE_VOLUME).
-///
-/// See Environment.getExternalStorageDirectory() for more info about shared/external
-/// storage semantics.
-@ProxyApi(
-  kotlinOptions: KotlinProxyApiOptions(
-    fullClassName: 'dev.hebei.storage.StorageVolume',
-  ),
-)
-abstract class StorageVolume {
-  /// Returns the directory where this volume is currently mounted.
-  ///
-  /// Direct filesystem access via this path has significant emulation overhead,
-  /// and apps are instead strongly encouraged to interact with media on storage
-  /// volumes via the MediaStore APIs.
-  ///
-  /// This directory does not give apps any additional access beyond what they
-  /// already have via MediaStore.
-  String? getPath();
-
-  /// Returns the current state of the volume.
-  MediaState getState();
-
-  /// Returns true if the volume is emulated.
-  bool isEmulated();
-
-  /// Returns true if the volume is the primary shared/external storage, which is
-  /// the volume backed by Environment.getExternalStorageDirectory().
-  bool isPrimary();
-
-  /// Returns true if the volume is removable.
-  bool isRemovable();
-}
-
-/// Callback that delivers StorageVolume related events.
-///
-/// For example, this can be used to detect when a volume changes to the
-/// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
-@ProxyApi(
-  kotlinOptions: KotlinProxyApiOptions(
-    fullClassName: 'dev.hebei.storage.StorageVolumeCallback',
-  ),
-)
-abstract class StorageVolumeCallback {
-  StorageVolumeCallback();
-
-  /// Called when StorageVolume.getState() changes, such as changing to the
-  /// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
-  ///
-  /// The given argument is a snapshot in time and can be used to process events
-  /// in the order they occurred, or you can call StorageManager.getStorageVolumes()
-  /// to observe the latest value.
-  late final void Function(StorageVolume volume) onStateChanged;
-}
-
-enum MediaState {
-  /// Unknown storage state, such as when a path isn't backed by known storage
-  /// media.
+enum VolumeState {
   unknown,
-
-  /// Storage state if the media is not present.
-  removed,
-
-  /// Storage state if the media is present but not mounted.
   unmounted,
-
-  /// Storage state if the media is present and being disk-checked.
   checking,
-
-  /// Storage state if the media is present but is blank or is using an unsupported
-  /// filesystem.
-  nofs,
-
-  /// Storage state if the media is present and mounted at its mount point with
-  /// read/write access.
   mounted,
-
-  /// Storage state if the media is present and mounted at its mount point with
-  /// read-only access.
   mountedReadOnly,
-
-  /// Storage state if the media is present not mounted, and shared via USB mass
-  /// storage.
-  shared,
-
-  /// Storage state if the media was removed before it was unmounted.
-  badRemoval,
-
-  /// Storage state if the media is present but cannot be mounted. Typically this
-  /// happens if the file system on the media is corrupted.
-  unmountable,
-
-  /// Storage state if the media is in the process of being ejected.
+  formatting,
   ejecting,
+  unmountable,
+  removed,
+  badRemoval,
 }

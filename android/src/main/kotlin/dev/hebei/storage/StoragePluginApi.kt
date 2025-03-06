@@ -9,6 +9,6 @@ class StoragePluginApi(registrar: StoragePigeonProxyApiRegistrar, private val in
     }
 
     override fun applicationContext(pigeon_instance: StoragePlugin): Context {
-        return pigeon_instance.applicationContext
+        return pigeon_instance.context
     }
 }
