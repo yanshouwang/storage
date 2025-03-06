@@ -1,6 +1,5 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import 'events.dart';
 import 'storage_plugin.dart';
 import 'storage_volume.dart';
 
@@ -11,7 +10,7 @@ abstract base class StorageManager extends PlatformInterface {
 
   factory StorageManager() => StoragePlugin.instance.newStorageManager();
 
-  Stream<MediaChangedEvent> get mediaChanged;
+  Stream<StorageVolume> get stateChanged;
 
   Future<List<StorageVolume>> getStorageVolumes();
 }

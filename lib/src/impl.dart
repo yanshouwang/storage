@@ -1,10 +1,6 @@
 import 'dart:async';
 
-import 'package:jni/jni.dart' as jni;
-
-import 'events.dart';
-import 'jni.dart' as jni;
-import 'media_action.dart';
+import 'media_state.dart';
 import 'storage.g.dart' as api;
 import 'storage_manager.dart';
 import 'storage_plugin.dart';
@@ -28,24 +24,47 @@ final class _StorageManagerImpl extends StorageManager {
     return instance;
   }
 
-  final Future<api.StorageManager?> _manager;
+  final Future<api.StorageManager> _manager;
+  late final StreamController<StorageVolume> _stateChangedController;
+  api.StorageVolumeCallback? _storageVolumeCallback;
 
   _StorageManagerImpl._impl()
-      : _manager = api.ContextCompat.getStorageManager(_context),
-        super.impl();
+      : _manager = api.ContextCompat.getStorageManager(_context)
+            .then((manager) => ArgumentError.checkNotNull(manager)),
+        super.impl() {
+    _stateChangedController = StreamController.broadcast(
+      onListen: _onListenStateChanged,
+      onCancel: _onCancelStateChanged,
+    );
+  }
 
   @override
-  // TODO: implement mediaChanged
-  Stream<MediaChangedEvent> get mediaChanged => throw UnimplementedError();
+  Stream<StorageVolume> get stateChanged => _stateChangedController.stream;
 
   @override
   Future<List<StorageVolume>> getStorageVolumes() async {
     final manager = await _manager;
-    if (manager == null) {
-      throw ArgumentError.notNull();
-    }
     final volumes = await manager.getStorageVolumes();
-    return volumes.map((volume) => _StorageVolumeImpl.impl(volume)).toList();
+    return volumes.map((volume) => volume.obj).toList();
+  }
+
+  void _onListenStateChanged() async {
+    final manager = await _manager;
+    final executor = await api.ContextCompat.getMainExecutor(_context);
+    final callback = api.StorageVolumeCallback(onStateChanged: (_, volume) {
+      _stateChangedController.add(volume.obj);
+    });
+    await manager.registerStorageVolumeCallback(executor, callback);
+    _storageVolumeCallback = callback;
+  }
+
+  void _onCancelStateChanged() async {
+    final manager = await _manager;
+    final callback = _storageVolumeCallback;
+    if (callback == null) {
+      return;
+    }
+    await manager.unregisterStorageVolumeCallback(callback);
   }
 }
 
@@ -62,127 +81,61 @@ final class _StorageVolumeImpl extends StorageVolume {
     }
     return path;
   }
-}
 
-final class _JNIStorageManagerImpl extends StorageManager {
-  static _JNIStorageManagerImpl? _instance;
-
-  factory _JNIStorageManagerImpl() {
-    var instance = _instance;
-    if (instance == null) {
-      _instance = instance = _JNIStorageManagerImpl._impl();
-    }
-    return instance;
-  }
-
-  late final jni.BroadcastReceiverImpl _receiver;
-  late final StreamController<MediaChangedEvent> _mediaChangedController;
-
-  _JNIStorageManagerImpl._impl() : super.impl() {
-    final callback = jni.BroadcastReceiverImpl_Callback.implement(
-      jni.$BroadcastReceiverImpl_Callback(
-        onReceive: (context, intent) {
-          final action = intent.getAction().toAction();
-          final jPath = intent.getDataString();
-          final path = jPath.isNull
-              ? null
-              : jPath.toDartString(
-                  releaseOriginal: true,
-                );
-          final event = MediaChangedEvent(
-            action: action,
-            path: path,
-          );
-          _mediaChangedController.add(event);
-        },
-      ),
-    );
-    _receiver = jni.BroadcastReceiverImpl(callback);
-    _mediaChangedController = StreamController.broadcast(
-      onListen: _onListenMediaChanged,
-      onCancel: _onCancelMediaChanged,
-    );
+  @override
+  Future<MediaState> getState() async {
+    final state = await _volume.getState();
+    return state.obj;
   }
 
   @override
-  Stream<MediaChangedEvent> get mediaChanged => _mediaChangedController.stream;
-
-  void _onListenMediaChanged() {
-    final filter = jni.IntentFilter()
-      ..addDataScheme(jni.ContentResolver.SCHEME_FILE)
-      ..addAction(jni.Intent.ACTION_MEDIA_BAD_REMOVAL)
-      ..addAction(jni.Intent.ACTION_MEDIA_BUTTON)
-      ..addAction(jni.Intent.ACTION_MEDIA_CHECKING)
-      ..addAction(jni.Intent.ACTION_MEDIA_EJECT)
-      ..addAction(jni.Intent.ACTION_MEDIA_MOUNTED)
-      ..addAction(jni.Intent.ACTION_MEDIA_NOFS)
-      ..addAction(jni.Intent.ACTION_MEDIA_REMOVED)
-      ..addAction(jni.Intent.ACTION_MEDIA_SCANNER_FINISHED)
-      ..addAction(jni.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
-      ..addAction(jni.Intent.ACTION_MEDIA_SCANNER_STARTED)
-      ..addAction(jni.Intent.ACTION_MEDIA_SHARED)
-      ..addAction(jni.Intent.ACTION_MEDIA_UNMOUNTABLE)
-      ..addAction(jni.Intent.ACTION_MEDIA_UNMOUNTED);
-    jni.ContextCompat.registerReceiver(
-      jni.context,
-      _receiver,
-      filter,
-      jni.ContextCompat.RECEIVER_NOT_EXPORTED,
-    );
-  }
-
-  void _onCancelMediaChanged() {
-    jni.context.unregisterReceiver(_receiver);
+  Future<bool> isEmulated() async {
+    final isEmulated = await _volume.isEmulated();
+    return isEmulated;
   }
 
   @override
-  Future<List<StorageVolume>> getStorageVolumes() {
-    // TODO: implement getStorageVolumes
-    throw UnimplementedError();
+  Future<bool> isPrimary() async {
+    final isPrimary = await _volume.isPrimary();
+    return isPrimary;
+  }
+
+  @override
+  Future<bool> isRemovable() async {
+    final isRemovable = await _volume.isRemovable();
+    return isRemovable;
   }
 }
 
-extension on jni.JString {
-  MediaAction toAction() {
-    if (this == jni.Intent.ACTION_MEDIA_BAD_REMOVAL) {
-      return MediaAction.badRemoval;
+extension on api.StorageVolume {
+  StorageVolume get obj => _StorageVolumeImpl.impl(this);
+}
+
+extension on api.MediaState {
+  MediaState get obj {
+    switch (this) {
+      case api.MediaState.unknown:
+        return MediaState.unknown;
+      case api.MediaState.removed:
+        return MediaState.removed;
+      case api.MediaState.unmounted:
+        return MediaState.unmounted;
+      case api.MediaState.checking:
+        return MediaState.checking;
+      case api.MediaState.nofs:
+        return MediaState.nofs;
+      case api.MediaState.mounted:
+        return MediaState.mounted;
+      case api.MediaState.mountedReadOnly:
+        return MediaState.mountedReadOnly;
+      case api.MediaState.shared:
+        return MediaState.shared;
+      case api.MediaState.badRemoval:
+        return MediaState.badRemoval;
+      case api.MediaState.unmountable:
+        return MediaState.unmountable;
+      case api.MediaState.ejecting:
+        return MediaState.ejecting;
     }
-    if (this == jni.Intent.ACTION_MEDIA_BUTTON) {
-      return MediaAction.button;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_CHECKING) {
-      return MediaAction.checking;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_EJECT) {
-      return MediaAction.eject;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_MOUNTED) {
-      return MediaAction.mounted;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_NOFS) {
-      return MediaAction.nofs;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_REMOVED) {
-      return MediaAction.removed;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_SCANNER_FINISHED) {
-      return MediaAction.scannerFinished;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE) {
-      return MediaAction.scannerScanFile;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_SCANNER_STARTED) {
-      return MediaAction.scannerStarted;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_SHARED) {
-      return MediaAction.shared;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_UNMOUNTABLE) {
-      return MediaAction.unmountable;
-    }
-    if (this == jni.Intent.ACTION_MEDIA_UNMOUNTED) {
-      return MediaAction.unmounted;
-    }
-    throw ArgumentError.value(this);
   }
 }

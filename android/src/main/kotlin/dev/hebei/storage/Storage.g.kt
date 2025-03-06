@@ -374,7 +374,10 @@ abstract class StoragePigeonProxyApiRegistrar(val binaryMessenger: BinaryMesseng
    * An implementation of [PigeonApiContext] used to add a new Dart instance of
    * `Context` to the Dart `InstanceManager`.
    */
-  abstract fun getPigeonApiContext(): PigeonApiContext
+  open fun getPigeonApiContext(): PigeonApiContext
+  {
+    return PigeonApiContext(this)
+  }
 
   /**
    * An implementation of [PigeonApiContextCompat] used to add a new Dart instance of
@@ -412,7 +415,6 @@ abstract class StoragePigeonProxyApiRegistrar(val binaryMessenger: BinaryMesseng
   fun setUp() {
     StoragePigeonInstanceManagerApi.setUpMessageHandlers(binaryMessenger, instanceManager)
     PigeonApiStoragePlugin.setUpMessageHandlers(binaryMessenger, getPigeonApiStoragePlugin())
-    PigeonApiContext.setUpMessageHandlers(binaryMessenger, getPigeonApiContext())
     PigeonApiContextCompat.setUpMessageHandlers(binaryMessenger, getPigeonApiContextCompat())
     PigeonApiStorageManager.setUpMessageHandlers(binaryMessenger, getPigeonApiStorageManager())
     PigeonApiStorageVolume.setUpMessageHandlers(binaryMessenger, getPigeonApiStorageVolume())
@@ -421,7 +423,6 @@ abstract class StoragePigeonProxyApiRegistrar(val binaryMessenger: BinaryMesseng
   fun tearDown() {
     StoragePigeonInstanceManagerApi.setUpMessageHandlers(binaryMessenger, null)
     PigeonApiStoragePlugin.setUpMessageHandlers(binaryMessenger, null)
-    PigeonApiContext.setUpMessageHandlers(binaryMessenger, null)
     PigeonApiContextCompat.setUpMessageHandlers(binaryMessenger, null)
     PigeonApiStorageManager.setUpMessageHandlers(binaryMessenger, null)
     PigeonApiStorageVolume.setUpMessageHandlers(binaryMessenger, null)
@@ -467,10 +468,10 @@ private class StoragePigeonProxyApiBaseCodec(val registrar: StoragePigeonProxyAp
      else if (value is android.os.storage.StorageManager) {
       registrar.getPigeonApiStorageManager().pigeon_newInstance(value) { }
     }
-     else if (value is android.os.storage.StorageVolume) {
+     else if (value is dev.hebei.storage.StorageVolume) {
       registrar.getPigeonApiStorageVolume().pigeon_newInstance(value) { }
     }
-     else if (value is android.os.storage.StorageManager.StorageVolumeCallback) {
+     else if (value is dev.hebei.storage.StorageVolumeCallback) {
       registrar.getPigeonApiStorageVolumeCallback().pigeon_newInstance(value) { }
     }
 
@@ -643,38 +644,7 @@ abstract class PigeonApiStoragePlugin(open val pigeonRegistrar: StoragePigeonPro
  * and receiving intents, etc.
  */
 @Suppress("UNCHECKED_CAST")
-abstract class PigeonApiContext(open val pigeonRegistrar: StoragePigeonProxyApiRegistrar) {
-  /**
-   * Return an Executor that will run enqueued tasks on the main thread associated
-   * with this context. This is the thread used to dispatch calls to application
-   * components (activities, services, etc).
-   */
-  abstract fun getMainExecutor(pigeon_instance: android.content.Context): java.util.concurrent.Executor
-
-  companion object {
-    @Suppress("LocalVariableName")
-    fun setUpMessageHandlers(binaryMessenger: BinaryMessenger, api: PigeonApiContext?) {
-      val codec = api?.pigeonRegistrar?.codec ?: StoragePigeonCodec()
-      run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.storage.Context.getMainExecutor", codec)
-        if (api != null) {
-          channel.setMessageHandler { message, reply ->
-            val args = message as List<Any?>
-            val pigeon_instanceArg = args[0] as android.content.Context
-            val wrapped: List<Any?> = try {
-              listOf(api.getMainExecutor(pigeon_instanceArg))
-            } catch (exception: Throwable) {
-              wrapError(exception)
-            }
-            reply.reply(wrapped)
-          }
-        } else {
-          channel.setMessageHandler(null)
-        }
-      }
-    }
-  }
-
+open class PigeonApiContext(open val pigeonRegistrar: StoragePigeonProxyApiRegistrar) {
   @Suppress("LocalVariableName", "FunctionName")
   /** Creates a Dart instance of Context and attaches it to [pigeon_instanceArg]. */
   fun pigeon_newInstance(pigeon_instanceArg: android.content.Context, callback: (Result<Unit>) -> Unit)
@@ -709,6 +679,13 @@ abstract class PigeonApiContext(open val pigeonRegistrar: StoragePigeonProxyApiR
 /** Helper for accessing features in Context. */
 @Suppress("UNCHECKED_CAST")
 abstract class PigeonApiContextCompat(open val pigeonRegistrar: StoragePigeonProxyApiRegistrar) {
+  /**
+   * Return an Executor that will run enqueued tasks on the main thread associated
+   * with this context. This is the thread used to dispatch calls to application
+   * components (activities, services, etc).
+   */
+  abstract fun getMainExecutor(context: android.content.Context): java.util.concurrent.Executor
+
   /** Return the handle to a system-level service by class. */
   abstract fun getStorageManager(context: android.content.Context): android.os.storage.StorageManager?
 
@@ -716,6 +693,23 @@ abstract class PigeonApiContextCompat(open val pigeonRegistrar: StoragePigeonPro
     @Suppress("LocalVariableName")
     fun setUpMessageHandlers(binaryMessenger: BinaryMessenger, api: PigeonApiContextCompat?) {
       val codec = api?.pigeonRegistrar?.codec ?: StoragePigeonCodec()
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.storage.ContextCompat.getMainExecutor", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val contextArg = args[0] as android.content.Context
+            val wrapped: List<Any?> = try {
+              listOf(api.getMainExecutor(contextArg))
+            } catch (exception: Throwable) {
+              wrapError(exception)
+            }
+            reply.reply(wrapped)
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
       run {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.storage.ContextCompat.getStorageManager", codec)
         if (api != null) {
@@ -905,7 +899,7 @@ abstract class PigeonApiStorageManager(open val pigeonRegistrar: StoragePigeonPr
    * primary shared storage device and any attached external volumes, including
    * SD cards and USB drives.
    */
-  abstract fun getStorageVolumes(pigeon_instance: android.os.storage.StorageManager): List<android.os.storage.StorageVolume>
+  abstract fun getStorageVolumes(pigeon_instance: android.os.storage.StorageManager): List<dev.hebei.storage.StorageVolume>
 
   /**
    * Registers the given callback to listen for StorageVolume changes.
@@ -913,10 +907,10 @@ abstract class PigeonApiStorageManager(open val pigeonRegistrar: StoragePigeonPr
    * For example, this can be used to detect when a volume changes to the
    * Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
    */
-  abstract fun registerStorageVolumeCallback(pigeon_instance: android.os.storage.StorageManager, executor: java.util.concurrent.Executor, callback: android.os.storage.StorageManager.StorageVolumeCallback)
+  abstract fun registerStorageVolumeCallback(pigeon_instance: android.os.storage.StorageManager, executor: java.util.concurrent.Executor, callback: dev.hebei.storage.StorageVolumeCallback)
 
   /** Unregisters the given callback from listening for StorageVolume changes. */
-  abstract fun unregisterStorageVolumeCallback(pigeon_instance: android.os.storage.StorageManager, callback: android.os.storage.StorageManager.StorageVolumeCallback)
+  abstract fun unregisterStorageVolumeCallback(pigeon_instance: android.os.storage.StorageManager, callback: dev.hebei.storage.StorageVolumeCallback)
 
   companion object {
     @Suppress("LocalVariableName")
@@ -946,7 +940,7 @@ abstract class PigeonApiStorageManager(open val pigeonRegistrar: StoragePigeonPr
             val args = message as List<Any?>
             val pigeon_instanceArg = args[0] as android.os.storage.StorageManager
             val executorArg = args[1] as java.util.concurrent.Executor
-            val callbackArg = args[2] as android.os.storage.StorageManager.StorageVolumeCallback
+            val callbackArg = args[2] as dev.hebei.storage.StorageVolumeCallback
             val wrapped: List<Any?> = try {
               api.registerStorageVolumeCallback(pigeon_instanceArg, executorArg, callbackArg)
               listOf(null)
@@ -965,7 +959,7 @@ abstract class PigeonApiStorageManager(open val pigeonRegistrar: StoragePigeonPr
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
             val pigeon_instanceArg = args[0] as android.os.storage.StorageManager
-            val callbackArg = args[1] as android.os.storage.StorageManager.StorageVolumeCallback
+            val callbackArg = args[1] as dev.hebei.storage.StorageVolumeCallback
             val wrapped: List<Any?> = try {
               api.unregisterStorageVolumeCallback(pigeon_instanceArg, callbackArg)
               listOf(null)
@@ -1061,22 +1055,22 @@ abstract class PigeonApiStorageVolume(open val pigeonRegistrar: StoragePigeonPro
    * This directory does not give apps any additional access beyond what they
    * already have via MediaStore.
    */
-  abstract fun getPath(pigeon_instance: android.os.storage.StorageVolume): String?
+  abstract fun getPath(pigeon_instance: dev.hebei.storage.StorageVolume): String?
 
   /** Returns the current state of the volume. */
-  abstract fun getState(pigeon_instance: android.os.storage.StorageVolume): MediaState
+  abstract fun getState(pigeon_instance: dev.hebei.storage.StorageVolume): MediaState
 
   /** Returns true if the volume is emulated. */
-  abstract fun isEmulated(pigeon_instance: android.os.storage.StorageVolume): Boolean
+  abstract fun isEmulated(pigeon_instance: dev.hebei.storage.StorageVolume): Boolean
 
   /**
    * Returns true if the volume is the primary shared/external storage, which is
    * the volume backed by Environment.getExternalStorageDirectory().
    */
-  abstract fun isPrimary(pigeon_instance: android.os.storage.StorageVolume): Boolean
+  abstract fun isPrimary(pigeon_instance: dev.hebei.storage.StorageVolume): Boolean
 
   /** Returns true if the volume is removable. */
-  abstract fun isRemovable(pigeon_instance: android.os.storage.StorageVolume): Boolean
+  abstract fun isRemovable(pigeon_instance: dev.hebei.storage.StorageVolume): Boolean
 
   companion object {
     @Suppress("LocalVariableName")
@@ -1087,7 +1081,7 @@ abstract class PigeonApiStorageVolume(open val pigeonRegistrar: StoragePigeonPro
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val pigeon_instanceArg = args[0] as android.os.storage.StorageVolume
+            val pigeon_instanceArg = args[0] as dev.hebei.storage.StorageVolume
             val wrapped: List<Any?> = try {
               listOf(api.getPath(pigeon_instanceArg))
             } catch (exception: Throwable) {
@@ -1104,7 +1098,7 @@ abstract class PigeonApiStorageVolume(open val pigeonRegistrar: StoragePigeonPro
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val pigeon_instanceArg = args[0] as android.os.storage.StorageVolume
+            val pigeon_instanceArg = args[0] as dev.hebei.storage.StorageVolume
             val wrapped: List<Any?> = try {
               listOf(api.getState(pigeon_instanceArg))
             } catch (exception: Throwable) {
@@ -1121,7 +1115,7 @@ abstract class PigeonApiStorageVolume(open val pigeonRegistrar: StoragePigeonPro
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val pigeon_instanceArg = args[0] as android.os.storage.StorageVolume
+            val pigeon_instanceArg = args[0] as dev.hebei.storage.StorageVolume
             val wrapped: List<Any?> = try {
               listOf(api.isEmulated(pigeon_instanceArg))
             } catch (exception: Throwable) {
@@ -1138,7 +1132,7 @@ abstract class PigeonApiStorageVolume(open val pigeonRegistrar: StoragePigeonPro
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val pigeon_instanceArg = args[0] as android.os.storage.StorageVolume
+            val pigeon_instanceArg = args[0] as dev.hebei.storage.StorageVolume
             val wrapped: List<Any?> = try {
               listOf(api.isPrimary(pigeon_instanceArg))
             } catch (exception: Throwable) {
@@ -1155,7 +1149,7 @@ abstract class PigeonApiStorageVolume(open val pigeonRegistrar: StoragePigeonPro
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
-            val pigeon_instanceArg = args[0] as android.os.storage.StorageVolume
+            val pigeon_instanceArg = args[0] as dev.hebei.storage.StorageVolume
             val wrapped: List<Any?> = try {
               listOf(api.isRemovable(pigeon_instanceArg))
             } catch (exception: Throwable) {
@@ -1172,7 +1166,7 @@ abstract class PigeonApiStorageVolume(open val pigeonRegistrar: StoragePigeonPro
 
   @Suppress("LocalVariableName", "FunctionName")
   /** Creates a Dart instance of StorageVolume and attaches it to [pigeon_instanceArg]. */
-  fun pigeon_newInstance(pigeon_instanceArg: android.os.storage.StorageVolume, callback: (Result<Unit>) -> Unit)
+  fun pigeon_newInstance(pigeon_instanceArg: dev.hebei.storage.StorageVolume, callback: (Result<Unit>) -> Unit)
 {
     if (pigeonRegistrar.ignoreCallsToDart) {
       callback(
@@ -1209,7 +1203,7 @@ abstract class PigeonApiStorageVolume(open val pigeonRegistrar: StoragePigeonPro
  */
 @Suppress("UNCHECKED_CAST")
 abstract class PigeonApiStorageVolumeCallback(open val pigeonRegistrar: StoragePigeonProxyApiRegistrar) {
-  abstract fun pigeon_defaultConstructor(): android.os.storage.StorageManager.StorageVolumeCallback
+  abstract fun pigeon_defaultConstructor(): dev.hebei.storage.StorageVolumeCallback
 
   companion object {
     @Suppress("LocalVariableName")
@@ -1238,7 +1232,7 @@ abstract class PigeonApiStorageVolumeCallback(open val pigeonRegistrar: StorageP
 
   @Suppress("LocalVariableName", "FunctionName")
   /** Creates a Dart instance of StorageVolumeCallback and attaches it to [pigeon_instanceArg]. */
-  fun pigeon_newInstance(pigeon_instanceArg: android.os.storage.StorageManager.StorageVolumeCallback, callback: (Result<Unit>) -> Unit)
+  fun pigeon_newInstance(pigeon_instanceArg: dev.hebei.storage.StorageVolumeCallback, callback: (Result<Unit>) -> Unit)
 {
     if (pigeonRegistrar.ignoreCallsToDart) {
       callback(
@@ -1261,7 +1255,7 @@ abstract class PigeonApiStorageVolumeCallback(open val pigeonRegistrar: StorageP
    * in the order they occurred, or you can call StorageManager.getStorageVolumes()
    * to observe the latest value.
    */
-  fun onStateChanged(pigeon_instanceArg: android.os.storage.StorageManager.StorageVolumeCallback, volumeArg: android.os.storage.StorageVolume, callback: (Result<Unit>) -> Unit)
+  fun onStateChanged(pigeon_instanceArg: dev.hebei.storage.StorageVolumeCallback, volumeArg: dev.hebei.storage.StorageVolume, callback: (Result<Unit>) -> Unit)
 {
     if (pigeonRegistrar.ignoreCallsToDart) {
       callback(

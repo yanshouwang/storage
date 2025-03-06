@@ -8,10 +8,6 @@ class StorageRegistrar(binaryMessenger: BinaryMessenger, private val storagePlug
         return StoragePluginApi(this, storagePlugin)
     }
 
-    override fun getPigeonApiContext(): PigeonApiContext {
-        return ContextApi(this)
-    }
-
     override fun getPigeonApiContextCompat(): PigeonApiContextCompat {
         return ContextCompatApi(this)
     }
@@ -25,6 +21,6 @@ class StorageRegistrar(binaryMessenger: BinaryMessenger, private val storagePlug
     }
 
     override fun getPigeonApiStorageVolumeCallback(): PigeonApiStorageVolumeCallback {
-        return StorageVolumeCallbackApi(this)
+        return StorageVolumeCallbackApi(this, storagePlugin.applicationContext)
     }
 }

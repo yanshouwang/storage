@@ -1,5 +1,5 @@
 name: storage
-description: "A new Flutter plugin project."
+description: 'A new Flutter plugin project.'
 version: 0.0.1
 homepage: https://github.com/yanshouwang/storage
 issue_tracker: https://github.com/yanshouwang/storage/issues
@@ -8,20 +8,18 @@ topics:
 
 environment:
   sdk: ^3.6.0
-  flutter: ">=3.3.0"
+  flutter: '>=3.3.0'
 
 dependencies:
   flutter:
     sdk: flutter
   plugin_platform_interface: ^2.0.2
-  jni: ^0.12.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
   pigeon: ^24.2.1
-  jnigen: ^0.12.2
 
 flutter:
   plugin:

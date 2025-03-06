@@ -34,12 +34,7 @@ abstract class StoragePlugin {
     fullClassName: 'android.content.Context',
   ),
 )
-abstract class Context {
-  /// Return an Executor that will run enqueued tasks on the main thread associated
-  /// with this context. This is the thread used to dispatch calls to application
-  /// components (activities, services, etc).
-  Executor getMainExecutor();
-}
+abstract class Context {}
 
 /// Helper for accessing features in Context.
 @ProxyApi(
@@ -48,6 +43,12 @@ abstract class Context {
   ),
 )
 abstract class ContextCompat {
+  /// Return an Executor that will run enqueued tasks on the main thread associated
+  /// with this context. This is the thread used to dispatch calls to application
+  /// components (activities, services, etc).
+  @static
+  Executor getMainExecutor(Context context);
+
   /// Return the handle to a system-level service by class.
   @static
   StorageManager? getStorageManager(Context context);
@@ -213,7 +214,7 @@ abstract class StorageManager {
 /// storage semantics.
 @ProxyApi(
   kotlinOptions: KotlinProxyApiOptions(
-    fullClassName: 'android.os.storage.StorageVolume',
+    fullClassName: 'dev.hebei.storage.StorageVolume',
   ),
 )
 abstract class StorageVolume {
@@ -247,7 +248,7 @@ abstract class StorageVolume {
 /// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
 @ProxyApi(
   kotlinOptions: KotlinProxyApiOptions(
-    fullClassName: 'android.os.storage.StorageManager.StorageVolumeCallback',
+    fullClassName: 'dev.hebei.storage.StorageVolumeCallback',
   ),
 )
 abstract class StorageVolumeCallback {
