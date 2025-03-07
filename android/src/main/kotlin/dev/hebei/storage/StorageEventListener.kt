@@ -7,21 +7,22 @@ import net.bytebuddy.android.AndroidClassLoadingStrategy.Wrapping
 import net.bytebuddy.implementation.InvocationHandlerAdapter
 import net.bytebuddy.matcher.ElementMatchers
 import java.lang.reflect.InvocationHandler
-import java.util.concurrent.Executor
 
-interface StorageVolumeCallback {
+interface StorageEventListener {
     companion object {
         @SuppressLint("PrivateApi")
         val clazz: Class<*> = Class.forName("android.os.storage.StorageEventListener")
     }
 
-    fun onStateChanged(volume: StorageVolume)
+    fun onVolumeStateChanged(volume: Volume, oldState: Int, newState: Int)
 
-    class Impl(private val api: StorageVolumeCallbackApi, private val context: Context) : StorageVolumeCallback {
+    class Impl(private val api: StorageEventListenerApi, private val context: Context) : StorageEventListener {
         private val handler = InvocationHandler { _, _, args ->
-            val obj = args[0]
-            val volume = StorageVolume(obj, context)
-            if (volume.isAvailable) this@Impl.onStateChanged(volume)
+            val vol = args[0]
+            val oldState = args[1] as Int
+            val newState = args[2] as Int
+            val volume = Volume(vol, context)
+            if (volume.isAvailable) this@Impl.onVolumeStateChanged(volume, oldState, newState)
         }
         private val dir = context.getDir("generated", Context.MODE_PRIVATE)
         private val strategy = Wrapping(dir)
@@ -30,12 +31,8 @@ interface StorageVolumeCallback {
             .intercept(InvocationHandlerAdapter.of(handler)).make()
             .load(clazz.classLoader, strategy).loaded.getConstructor().newInstance()
 
-        lateinit var executor: Executor
-
-        override fun onStateChanged(volume: StorageVolume) {
-            executor.execute {
-                api.onStateChanged(this, volume) {}
-            }
+        override fun onVolumeStateChanged(volume: Volume, oldState: Int, newState: Int) {
+            api.onVolumeStateChanged(this, volume, oldState.volumeStateArgs, newState.volumeStateArgs) {}
         }
     }
 }

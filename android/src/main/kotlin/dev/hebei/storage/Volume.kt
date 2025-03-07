@@ -3,7 +3,7 @@ package dev.hebei.storage
 import android.annotation.SuppressLint
 import android.content.Context
 
-class StorageVolume(private val obj: Any, private val context: Context) {
+class Volume(private val obj: Any, private val context: Context) {
     companion object {
         @SuppressLint("PrivateApi")
         val clazz: Class<*> = Class.forName("android.os.storage.VolumeInfo")
@@ -56,3 +56,17 @@ class StorageVolume(private val obj: Any, private val context: Context) {
         return clazz.getMethod("hashCode").invoke(obj) as Int
     }
 }
+
+val Int.volumeStateArgs: VolumeState
+    get() = when (this) {
+        Volume.STATE_UNMOUNTED -> VolumeState.UNMOUNTED
+        Volume.STATE_CHECKING -> VolumeState.CHECKING
+        Volume.STATE_MOUNTED -> VolumeState.MOUNTED
+        Volume.STATE_MOUNTED_READ_ONLY -> VolumeState.MOUNTED_READ_ONLY
+        Volume.STATE_FORMATTING -> VolumeState.FORMATTING
+        Volume.STATE_EJECTING -> VolumeState.EJECTING
+        Volume.STATE_UNMOUNTABLE -> VolumeState.UNMOUNTABLE
+        Volume.STATE_REMOVED -> VolumeState.REMOVED
+        Volume.STATE_BAD_REMOVAL -> VolumeState.BAD_REMOVAL
+        else -> VolumeState.UNKNOWN
+    }

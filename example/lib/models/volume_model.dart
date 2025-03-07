@@ -1,7 +1,7 @@
 import 'package:storage/storage.dart';
 
 class VolumeModel {
-  final StorageVolume volume;
+  final Volume volume;
 
   final String path;
   final VolumeState state;

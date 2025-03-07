@@ -1,7 +1,7 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'storage_plugin.dart';
-import 'storage_volume.dart';
+import 'volume.dart';
 
 abstract base class StorageManager extends PlatformInterface {
   static final _token = Object();
@@ -10,7 +10,7 @@ abstract base class StorageManager extends PlatformInterface {
 
   factory StorageManager() => StoragePlugin.instance.newStorageManager();
 
-  Stream<StorageVolume> get stateChanged;
+  Stream<Volume> get volumeStateChanged;
 
-  Future<List<StorageVolume>> getStorageVolumes();
+  Future<List<Volume>> getVolumes();
 }

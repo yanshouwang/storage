@@ -129,8 +129,8 @@ class PigeonInstanceManager {
     );
     _PigeonInternalInstanceManagerApi.setUpMessageHandlers(instanceManager: instanceManager);
     StoragePlugin.pigeon_setUpMessageHandlers(pigeon_instanceManager: instanceManager);
-    StorageVolume.pigeon_setUpMessageHandlers(pigeon_instanceManager: instanceManager);
-    StorageVolumeCallback.pigeon_setUpMessageHandlers(pigeon_instanceManager: instanceManager);
+    Volume.pigeon_setUpMessageHandlers(pigeon_instanceManager: instanceManager);
+    StorageEventListener.pigeon_setUpMessageHandlers(pigeon_instanceManager: instanceManager);
     Context.pigeon_setUpMessageHandlers(pigeon_instanceManager: instanceManager);
     ContextCompat.pigeon_setUpMessageHandlers(pigeon_instanceManager: instanceManager);
     Executor.pigeon_setUpMessageHandlers(pigeon_instanceManager: instanceManager);
@@ -447,7 +447,7 @@ class StoragePlugin extends PigeonInternalProxyApiBaseClass {
 
   static final StoragePlugin instance = pigeonVar_instance();
 
-  late final Context applicationContext = pigeonVar_applicationContext();
+  late final Context context = pigeonVar_context();
 
   static void pigeon_setUpMessageHandlers({
     bool pigeon_clearHandlers = false,
@@ -533,7 +533,7 @@ class StoragePlugin extends PigeonInternalProxyApiBaseClass {
     return pigeonVar_instance;
   }
 
-  Context pigeonVar_applicationContext() {
+  Context pigeonVar_context() {
     final Context pigeonVar_instance = Context.pigeon_detached(
       pigeon_binaryMessenger: pigeon_binaryMessenger,
       pigeon_instanceManager: pigeon_instanceManager,
@@ -545,7 +545,7 @@ class StoragePlugin extends PigeonInternalProxyApiBaseClass {
         pigeon_instanceManager.addDartCreatedInstance(pigeonVar_instance);
     () async {
       const String pigeonVar_channelName =
-          'dev.flutter.pigeon.storage.StoragePlugin.applicationContext';
+          'dev.flutter.pigeon.storage.StoragePlugin.context';
       final BasicMessageChannel<Object?> pigeonVar_channel =
           BasicMessageChannel<Object?>(
         pigeonVar_channelName,
@@ -615,25 +615,25 @@ class StoragePlugin extends PigeonInternalProxyApiBaseClass {
 ///
 /// See Environment.getExternalStorageDirectory() for more info about shared/external
 /// storage semantics.
-class StorageVolume extends PigeonInternalProxyApiBaseClass {
-  /// Constructs [StorageVolume] without creating the associated native object.
+class Volume extends PigeonInternalProxyApiBaseClass {
+  /// Constructs [Volume] without creating the associated native object.
   ///
   /// This should only be used by subclasses created by this library or to
   /// create copies for an [PigeonInstanceManager].
   @protected
-  StorageVolume.pigeon_detached({
+  Volume.pigeon_detached({
     super.pigeon_binaryMessenger,
     super.pigeon_instanceManager,
   });
 
-  late final _PigeonInternalProxyApiBaseCodec _pigeonVar_codecStorageVolume =
+  late final _PigeonInternalProxyApiBaseCodec _pigeonVar_codecVolume =
       _PigeonInternalProxyApiBaseCodec(pigeon_instanceManager);
 
   static void pigeon_setUpMessageHandlers({
     bool pigeon_clearHandlers = false,
     BinaryMessenger? pigeon_binaryMessenger,
     PigeonInstanceManager? pigeon_instanceManager,
-    StorageVolume Function()? pigeon_newInstance,
+    Volume Function()? pigeon_newInstance,
   }) {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
         _PigeonInternalProxyApiBaseCodec(
@@ -642,7 +642,7 @@ class StorageVolume extends PigeonInternalProxyApiBaseClass {
     {
       final BasicMessageChannel<Object?> pigeonVar_channel =
           BasicMessageChannel<Object?>(
-              'dev.flutter.pigeon.storage.StorageVolume.pigeon_newInstance',
+              'dev.flutter.pigeon.storage.Volume.pigeon_newInstance',
               pigeonChannelCodec,
               binaryMessenger: binaryMessenger);
       if (pigeon_clearHandlers) {
@@ -650,16 +650,16 @@ class StorageVolume extends PigeonInternalProxyApiBaseClass {
       } else {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           assert(message != null,
-              'Argument for dev.flutter.pigeon.storage.StorageVolume.pigeon_newInstance was null.');
+              'Argument for dev.flutter.pigeon.storage.Volume.pigeon_newInstance was null.');
           final List<Object?> args = (message as List<Object?>?)!;
           final int? arg_pigeon_instanceIdentifier = (args[0] as int?);
           assert(arg_pigeon_instanceIdentifier != null,
-              'Argument for dev.flutter.pigeon.storage.StorageVolume.pigeon_newInstance was null, expected non-null int.');
+              'Argument for dev.flutter.pigeon.storage.Volume.pigeon_newInstance was null, expected non-null int.');
           try {
             (pigeon_instanceManager ?? PigeonInstanceManager.instance)
                 .addHostCreatedInstance(
               pigeon_newInstance?.call() ??
-                  StorageVolume.pigeon_detached(
+                  Volume.pigeon_detached(
                     pigeon_binaryMessenger: pigeon_binaryMessenger,
                     pigeon_instanceManager: pigeon_instanceManager,
                   ),
@@ -679,10 +679,10 @@ class StorageVolume extends PigeonInternalProxyApiBaseClass {
 
   Future<String> getId() async {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
-        _pigeonVar_codecStorageVolume;
+        _pigeonVar_codecVolume;
     final BinaryMessenger? pigeonVar_binaryMessenger = pigeon_binaryMessenger;
     const String pigeonVar_channelName =
-        'dev.flutter.pigeon.storage.StorageVolume.getId';
+        'dev.flutter.pigeon.storage.Volume.getId';
     final BasicMessageChannel<Object?> pigeonVar_channel =
         BasicMessageChannel<Object?>(
       pigeonVar_channelName,
@@ -721,10 +721,10 @@ class StorageVolume extends PigeonInternalProxyApiBaseClass {
   /// already have via MediaStore.
   Future<String?> getPath() async {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
-        _pigeonVar_codecStorageVolume;
+        _pigeonVar_codecVolume;
     final BinaryMessenger? pigeonVar_binaryMessenger = pigeon_binaryMessenger;
     const String pigeonVar_channelName =
-        'dev.flutter.pigeon.storage.StorageVolume.getPath';
+        'dev.flutter.pigeon.storage.Volume.getPath';
     final BasicMessageChannel<Object?> pigeonVar_channel =
         BasicMessageChannel<Object?>(
       pigeonVar_channelName,
@@ -751,10 +751,10 @@ class StorageVolume extends PigeonInternalProxyApiBaseClass {
   /// Returns the current state of the volume.
   Future<VolumeState> getState() async {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
-        _pigeonVar_codecStorageVolume;
+        _pigeonVar_codecVolume;
     final BinaryMessenger? pigeonVar_binaryMessenger = pigeon_binaryMessenger;
     const String pigeonVar_channelName =
-        'dev.flutter.pigeon.storage.StorageVolume.getState';
+        'dev.flutter.pigeon.storage.Volume.getState';
     final BasicMessageChannel<Object?> pigeonVar_channel =
         BasicMessageChannel<Object?>(
       pigeonVar_channelName,
@@ -786,10 +786,10 @@ class StorageVolume extends PigeonInternalProxyApiBaseClass {
   /// Returns true if the volume is emulated.
   Future<bool> isEmulated() async {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
-        _pigeonVar_codecStorageVolume;
+        _pigeonVar_codecVolume;
     final BinaryMessenger? pigeonVar_binaryMessenger = pigeon_binaryMessenger;
     const String pigeonVar_channelName =
-        'dev.flutter.pigeon.storage.StorageVolume.isEmulated';
+        'dev.flutter.pigeon.storage.Volume.isEmulated';
     final BasicMessageChannel<Object?> pigeonVar_channel =
         BasicMessageChannel<Object?>(
       pigeonVar_channelName,
@@ -822,10 +822,10 @@ class StorageVolume extends PigeonInternalProxyApiBaseClass {
   /// the volume backed by Environment.getExternalStorageDirectory().
   Future<bool> isPrimary() async {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
-        _pigeonVar_codecStorageVolume;
+        _pigeonVar_codecVolume;
     final BinaryMessenger? pigeonVar_binaryMessenger = pigeon_binaryMessenger;
     const String pigeonVar_channelName =
-        'dev.flutter.pigeon.storage.StorageVolume.isPrimary';
+        'dev.flutter.pigeon.storage.Volume.isPrimary';
     final BasicMessageChannel<Object?> pigeonVar_channel =
         BasicMessageChannel<Object?>(
       pigeonVar_channelName,
@@ -857,10 +857,10 @@ class StorageVolume extends PigeonInternalProxyApiBaseClass {
   /// Returns true if the volume is removable.
   Future<bool> isRemovable() async {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
-        _pigeonVar_codecStorageVolume;
+        _pigeonVar_codecVolume;
     final BinaryMessenger? pigeonVar_binaryMessenger = pigeon_binaryMessenger;
     const String pigeonVar_channelName =
-        'dev.flutter.pigeon.storage.StorageVolume.isRemovable';
+        'dev.flutter.pigeon.storage.Volume.isRemovable';
     final BasicMessageChannel<Object?> pigeonVar_channel =
         BasicMessageChannel<Object?>(
       pigeonVar_channelName,
@@ -890,31 +890,27 @@ class StorageVolume extends PigeonInternalProxyApiBaseClass {
   }
 
   @override
-  StorageVolume pigeon_copy() {
-    return StorageVolume.pigeon_detached(
+  Volume pigeon_copy() {
+    return Volume.pigeon_detached(
       pigeon_binaryMessenger: pigeon_binaryMessenger,
       pigeon_instanceManager: pigeon_instanceManager,
     );
   }
 }
 
-/// Callback that delivers StorageVolume related events.
-///
-/// For example, this can be used to detect when a volume changes to the
-/// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
-class StorageVolumeCallback extends PigeonInternalProxyApiBaseClass {
-  StorageVolumeCallback({
+class StorageEventListener extends PigeonInternalProxyApiBaseClass {
+  StorageEventListener({
     super.pigeon_binaryMessenger,
     super.pigeon_instanceManager,
-    required this.onStateChanged,
+    required this.onVolumeStateChanged,
   }) {
     final int pigeonVar_instanceIdentifier =
         pigeon_instanceManager.addDartCreatedInstance(this);
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
-        _pigeonVar_codecStorageVolumeCallback;
+        _pigeonVar_codecStorageEventListener;
     final BinaryMessenger? pigeonVar_binaryMessenger = pigeon_binaryMessenger;
     const String pigeonVar_channelName =
-        'dev.flutter.pigeon.storage.StorageVolumeCallback.pigeon_defaultConstructor';
+        'dev.flutter.pigeon.storage.StorageEventListener.pigeon_defaultConstructor';
     final BasicMessageChannel<Object?> pigeonVar_channel =
         BasicMessageChannel<Object?>(
       pigeonVar_channelName,
@@ -940,27 +936,22 @@ class StorageVolumeCallback extends PigeonInternalProxyApiBaseClass {
     }();
   }
 
-  /// Constructs [StorageVolumeCallback] without creating the associated native object.
+  /// Constructs [StorageEventListener] without creating the associated native object.
   ///
   /// This should only be used by subclasses created by this library or to
   /// create copies for an [PigeonInstanceManager].
   @protected
-  StorageVolumeCallback.pigeon_detached({
+  StorageEventListener.pigeon_detached({
     super.pigeon_binaryMessenger,
     super.pigeon_instanceManager,
-    required this.onStateChanged,
+    required this.onVolumeStateChanged,
   });
 
   late final _PigeonInternalProxyApiBaseCodec
-      _pigeonVar_codecStorageVolumeCallback =
+      _pigeonVar_codecStorageEventListener =
       _PigeonInternalProxyApiBaseCodec(pigeon_instanceManager);
 
-  /// Called when StorageVolume.getState() changes, such as changing to the
-  /// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
-  ///
-  /// The given argument is a snapshot in time and can be used to process events
-  /// in the order they occurred, or you can call StorageManager.getStorageVolumes()
-  /// to observe the latest value.
+  /// Callback method.
   ///
   /// For the associated Native object to be automatically garbage collected,
   /// it is required that the implementation of this `Function` doesn't have a
@@ -970,8 +961,8 @@ class StorageVolumeCallback extends PigeonInternalProxyApiBaseClass {
   ///
   /// ```dart
   /// final WeakReference weakMyVariable = WeakReference(myVariable);
-  /// final StorageVolumeCallback instance = StorageVolumeCallback(
-  ///  onStateChanged: (StorageVolumeCallback pigeon_instance, ...) {
+  /// final StorageEventListener instance = StorageEventListener(
+  ///  onVolumeStateChanged: (StorageEventListener pigeon_instance, ...) {
   ///    print(weakMyVariable?.target);
   ///  },
   /// );
@@ -980,46 +971,58 @@ class StorageVolumeCallback extends PigeonInternalProxyApiBaseClass {
   /// Alternatively, [PigeonInstanceManager.removeWeakReference] can be used to
   /// release the associated Native object manually.
   final void Function(
-    StorageVolumeCallback pigeon_instance,
-    StorageVolume volume,
-  ) onStateChanged;
+    StorageEventListener pigeon_instance,
+    Volume volume,
+    VolumeState oldState,
+    VolumeState newState,
+  ) onVolumeStateChanged;
 
   static void pigeon_setUpMessageHandlers({
     bool pigeon_clearHandlers = false,
     BinaryMessenger? pigeon_binaryMessenger,
     PigeonInstanceManager? pigeon_instanceManager,
     void Function(
-      StorageVolumeCallback pigeon_instance,
-      StorageVolume volume,
-    )? onStateChanged,
+      StorageEventListener pigeon_instance,
+      Volume volume,
+      VolumeState oldState,
+      VolumeState newState,
+    )? onVolumeStateChanged,
   }) {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
         _PigeonInternalProxyApiBaseCodec(
             pigeon_instanceManager ?? PigeonInstanceManager.instance);
     final BinaryMessenger? binaryMessenger = pigeon_binaryMessenger;
     {
-      final BasicMessageChannel<Object?> pigeonVar_channel =
-          BasicMessageChannel<Object?>(
-              'dev.flutter.pigeon.storage.StorageVolumeCallback.onStateChanged',
-              pigeonChannelCodec,
-              binaryMessenger: binaryMessenger);
+      final BasicMessageChannel<
+          Object?> pigeonVar_channel = BasicMessageChannel<
+              Object?>(
+          'dev.flutter.pigeon.storage.StorageEventListener.onVolumeStateChanged',
+          pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
       if (pigeon_clearHandlers) {
         pigeonVar_channel.setMessageHandler(null);
       } else {
         pigeonVar_channel.setMessageHandler((Object? message) async {
           assert(message != null,
-              'Argument for dev.flutter.pigeon.storage.StorageVolumeCallback.onStateChanged was null.');
+              'Argument for dev.flutter.pigeon.storage.StorageEventListener.onVolumeStateChanged was null.');
           final List<Object?> args = (message as List<Object?>?)!;
-          final StorageVolumeCallback? arg_pigeon_instance =
-              (args[0] as StorageVolumeCallback?);
+          final StorageEventListener? arg_pigeon_instance =
+              (args[0] as StorageEventListener?);
           assert(arg_pigeon_instance != null,
-              'Argument for dev.flutter.pigeon.storage.StorageVolumeCallback.onStateChanged was null, expected non-null StorageVolumeCallback.');
-          final StorageVolume? arg_volume = (args[1] as StorageVolume?);
+              'Argument for dev.flutter.pigeon.storage.StorageEventListener.onVolumeStateChanged was null, expected non-null StorageEventListener.');
+          final Volume? arg_volume = (args[1] as Volume?);
           assert(arg_volume != null,
-              'Argument for dev.flutter.pigeon.storage.StorageVolumeCallback.onStateChanged was null, expected non-null StorageVolume.');
+              'Argument for dev.flutter.pigeon.storage.StorageEventListener.onVolumeStateChanged was null, expected non-null Volume.');
+          final VolumeState? arg_oldState = (args[2] as VolumeState?);
+          assert(arg_oldState != null,
+              'Argument for dev.flutter.pigeon.storage.StorageEventListener.onVolumeStateChanged was null, expected non-null VolumeState.');
+          final VolumeState? arg_newState = (args[3] as VolumeState?);
+          assert(arg_newState != null,
+              'Argument for dev.flutter.pigeon.storage.StorageEventListener.onVolumeStateChanged was null, expected non-null VolumeState.');
           try {
-            (onStateChanged ?? arg_pigeon_instance!.onStateChanged)
-                .call(arg_pigeon_instance!, arg_volume!);
+            (onVolumeStateChanged ?? arg_pigeon_instance!.onVolumeStateChanged)
+                .call(arg_pigeon_instance!, arg_volume!, arg_oldState!,
+                    arg_newState!);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);
@@ -1033,11 +1036,11 @@ class StorageVolumeCallback extends PigeonInternalProxyApiBaseClass {
   }
 
   @override
-  StorageVolumeCallback pigeon_copy() {
-    return StorageVolumeCallback.pigeon_detached(
+  StorageEventListener pigeon_copy() {
+    return StorageEventListener.pigeon_detached(
       pigeon_binaryMessenger: pigeon_binaryMessenger,
       pigeon_instanceManager: pigeon_instanceManager,
-      onStateChanged: onStateChanged,
+      onVolumeStateChanged: onVolumeStateChanged,
     );
   }
 }
@@ -1484,19 +1487,12 @@ class StorageManager extends PigeonInternalProxyApiBaseClass {
     }
   }
 
-  /// Return the list of shared/external storage volumes currently available to
-  /// the calling user.
-  ///
-  /// These storage volumes are actively attached to the device, but may be in
-  /// any mount state, as returned by StorageVolume.getState(). Returns both the
-  /// primary shared storage device and any attached external volumes, including
-  /// SD cards and USB drives.
-  Future<List<StorageVolume>> getStorageVolumes() async {
+  Future<List<Volume>> getVolumes() async {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
         _pigeonVar_codecStorageManager;
     final BinaryMessenger? pigeonVar_binaryMessenger = pigeon_binaryMessenger;
     const String pigeonVar_channelName =
-        'dev.flutter.pigeon.storage.StorageManager.getStorageVolumes';
+        'dev.flutter.pigeon.storage.StorageManager.getVolumes';
     final BasicMessageChannel<Object?> pigeonVar_channel =
         BasicMessageChannel<Object?>(
       pigeonVar_channelName,
@@ -1521,23 +1517,16 @@ class StorageManager extends PigeonInternalProxyApiBaseClass {
         message: 'Host platform returned null value for non-null return value.',
       );
     } else {
-      return (pigeonVar_replyList[0] as List<Object?>?)!.cast<StorageVolume>();
+      return (pigeonVar_replyList[0] as List<Object?>?)!.cast<Volume>();
     }
   }
 
-  /// Registers the given callback to listen for StorageVolume changes.
-  ///
-  /// For example, this can be used to detect when a volume changes to the
-  /// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
-  Future<void> registerStorageVolumeCallback(
-    Executor executor,
-    StorageVolumeCallback callback,
-  ) async {
+  Future<void> registerListener(StorageEventListener listener) async {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
         _pigeonVar_codecStorageManager;
     final BinaryMessenger? pigeonVar_binaryMessenger = pigeon_binaryMessenger;
     const String pigeonVar_channelName =
-        'dev.flutter.pigeon.storage.StorageManager.registerStorageVolumeCallback';
+        'dev.flutter.pigeon.storage.StorageManager.registerListener';
     final BasicMessageChannel<Object?> pigeonVar_channel =
         BasicMessageChannel<Object?>(
       pigeonVar_channelName,
@@ -1545,7 +1534,7 @@ class StorageManager extends PigeonInternalProxyApiBaseClass {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture =
-        pigeonVar_channel.send(<Object?>[this, executor, callback]);
+        pigeonVar_channel.send(<Object?>[this, listener]);
     final List<Object?>? pigeonVar_replyList =
         await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
@@ -1561,14 +1550,12 @@ class StorageManager extends PigeonInternalProxyApiBaseClass {
     }
   }
 
-  /// Unregisters the given callback from listening for StorageVolume changes.
-  Future<void> unregisterStorageVolumeCallback(
-      StorageVolumeCallback callback) async {
+  Future<void> unregisterListener(StorageEventListener listener) async {
     final _PigeonInternalProxyApiBaseCodec pigeonChannelCodec =
         _pigeonVar_codecStorageManager;
     final BinaryMessenger? pigeonVar_binaryMessenger = pigeon_binaryMessenger;
     const String pigeonVar_channelName =
-        'dev.flutter.pigeon.storage.StorageManager.unregisterStorageVolumeCallback';
+        'dev.flutter.pigeon.storage.StorageManager.unregisterListener';
     final BasicMessageChannel<Object?> pigeonVar_channel =
         BasicMessageChannel<Object?>(
       pigeonVar_channelName,
@@ -1576,7 +1563,7 @@ class StorageManager extends PigeonInternalProxyApiBaseClass {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture =
-        pigeonVar_channel.send(<Object?>[this, callback]);
+        pigeonVar_channel.send(<Object?>[this, listener]);
     final List<Object?>? pigeonVar_replyList =
         await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {

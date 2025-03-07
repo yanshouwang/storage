@@ -76,7 +76,7 @@ class _HomeViewState extends State<HomeView> {
   }
 
   void _initialize() async {
-    final volumes = await _storageManager.getStorageVolumes();
+    final volumes = await _storageManager.getVolumes();
     final newValue = <VolumeModel>[];
     for (var volume in volumes) {
       final path = await volume.getPath().then((e) => e ?? '');
@@ -95,10 +95,10 @@ class _HomeViewState extends State<HomeView> {
       newValue.add(volumeModel);
     }
     _volumeModels.value = newValue;
-    _storageManager.stateChanged.listen(_onVolumeStateChanged);
+    _storageManager.volumeStateChanged.listen(_onVolumeStateChanged);
   }
 
-  void _onVolumeStateChanged(StorageVolume volume) async {
+  void _onVolumeStateChanged(Volume volume) async {
     final path = await volume.getPath().then((e) => e ?? '');
     final state = await volume.getState();
     final isEmulated = await volume.isEmulated();

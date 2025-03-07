@@ -16,11 +16,11 @@ class StorageRegistrar(binaryMessenger: BinaryMessenger, private val instance: S
         return StorageManagerApi(this, instance.context)
     }
 
-    override fun getPigeonApiStorageVolume(): PigeonApiStorageVolume {
-        return StorageVolumeApi(this)
+    override fun getPigeonApiVolume(): PigeonApiVolume {
+        return VolumeApi(this)
     }
 
-    override fun getPigeonApiStorageVolumeCallback(): PigeonApiStorageVolumeCallback {
-        return StorageVolumeCallbackApi(this, instance.context)
+    override fun getPigeonApiStorageEventListener(): PigeonApiStorageEventListener {
+        return StorageEventListenerApi(this, instance.context)
     }
 }

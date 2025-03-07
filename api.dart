@@ -21,7 +21,7 @@ abstract class StoragePlugin {
   @static
   late final StoragePlugin instance;
   @attached
-  late final Context applicationContext;
+  late final Context context;
 }
 
 /// Information about a shared/external storage volume for a specific user.
@@ -61,10 +61,10 @@ abstract class StoragePlugin {
 /// storage semantics.
 @ProxyApi(
   kotlinOptions: KotlinProxyApiOptions(
-    fullClassName: 'dev.hebei.storage.StorageVolume',
+    fullClassName: 'dev.hebei.storage.Volume',
   ),
 )
-abstract class StorageVolume {
+abstract class Volume {
   String getId();
 
   /// Returns the directory where this volume is currently mounted.
@@ -91,25 +91,17 @@ abstract class StorageVolume {
   bool isRemovable();
 }
 
-/// Callback that delivers StorageVolume related events.
-///
-/// For example, this can be used to detect when a volume changes to the
-/// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
 @ProxyApi(
   kotlinOptions: KotlinProxyApiOptions(
-    fullClassName: 'dev.hebei.storage.StorageVolumeCallback',
+    fullClassName: 'dev.hebei.storage.StorageEventListener',
   ),
 )
-abstract class StorageVolumeCallback {
-  StorageVolumeCallback();
+abstract class StorageEventListener {
+  StorageEventListener();
 
-  /// Called when StorageVolume.getState() changes, such as changing to the
-  /// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
-  ///
-  /// The given argument is a snapshot in time and can be used to process events
-  /// in the order they occurred, or you can call StorageManager.getStorageVolumes()
-  /// to observe the latest value.
-  late final void Function(StorageVolume volume) onStateChanged;
+  late final void Function(
+          Volume volume, VolumeState oldState, VolumeState newState)
+      onVolumeStateChanged;
 }
 
 /// Interface to global information about an application environment. This is an
@@ -245,24 +237,9 @@ abstract class Executor {}
   ),
 )
 abstract class StorageManager {
-  /// Return the list of shared/external storage volumes currently available to
-  /// the calling user.
-  ///
-  /// These storage volumes are actively attached to the device, but may be in
-  /// any mount state, as returned by StorageVolume.getState(). Returns both the
-  /// primary shared storage device and any attached external volumes, including
-  /// SD cards and USB drives.
-  List<StorageVolume> getStorageVolumes();
-
-  /// Registers the given callback to listen for StorageVolume changes.
-  ///
-  /// For example, this can be used to detect when a volume changes to the
-  /// Environment.MEDIA_MOUNTED or Environment.MEDIA_UNMOUNTED states.
-  void registerStorageVolumeCallback(
-      Executor executor, StorageVolumeCallback callback);
-
-  /// Unregisters the given callback from listening for StorageVolume changes.
-  void unregisterStorageVolumeCallback(StorageVolumeCallback callback);
+  List<Volume> getVolumes();
+  void registerListener(StorageEventListener listener);
+  void unregisterListener(StorageEventListener listener);
 }
 
 enum VolumeState {
